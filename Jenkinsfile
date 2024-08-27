@@ -3,15 +3,17 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Checkout the code from Git
-                git 'https://github.com/ayegwalo/my_jenkins_project.git'
+                // Checkout the repository
+                checkout scm
             }
         }
         stage('Build Docker Image') {
             steps {
-                script {
-                    // Build the Docker image
-                    docker.build('my-node-app')
+                // Build the Docker image
+                dir('jenkins-node-app') {
+                    script {
+                        sh 'docker build -t my-node-app .'
+                    }
                 }
             }
         }
@@ -19,15 +21,9 @@ pipeline {
             steps {
                 script {
                     // Run the Docker container
-                    docker.run('my-node-app', '-p 3000:3000')
+                    sh 'docker run -d -p 3000:3000 my-node-app'
                 }
             }
-        }
-    }
-    post {
-        always {
-            // Clean up workspace after build
-            cleanWs()
         }
     }
 }
