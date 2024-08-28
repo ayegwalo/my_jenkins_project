@@ -7,21 +7,10 @@ pipeline {
         IMAGE_NAME = 'my-node-app'
         CONTAINER_PORT = '3000'
         HOST_PORT = '3000'
-        PATH = "/Users/CHR/.nvm/versions/node/v22.5.1/bin:${env.PATH}"  // Include the directory for Node.js and npm
+        PATH = "/usr/local/bin:${env.PATH}"  // Ensure PATH includes the directory for Node.js and dependencies
     }
 
     stages {
-        stage('Validate npm') {
-            steps {
-                script {
-                    // Check if npm is available
-                    sh 'which npm'
-                    // Print npm version
-                    sh 'npm --version'
-                }
-            }
-        }
-
         stage('Checkout') {
             steps {
                 git url: "${env.GIT_REPO_URL}", branch: 'main'
@@ -48,7 +37,8 @@ pipeline {
         stage('Docker Build') {
             steps {
                 script {
-                    sh "docker build -t ${env.IMAGE_NAME} ."
+                    // Check if Docker Buildx is available, and use it if installed
+                    sh 'docker buildx version || docker build -t ${env.IMAGE_NAME} .'
                 }
             }
         }
@@ -56,6 +46,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
+                    // Deploy the Docker container
                     sh "docker run -d -p ${env.HOST_PORT}:${env.CONTAINER_PORT} ${env.IMAGE_NAME}"
                 }
             }
