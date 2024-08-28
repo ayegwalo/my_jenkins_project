@@ -23,7 +23,7 @@ pipeline {
             steps {
                 // Build Docker image
                 dir("${APP_DIR}") {
-                    sh 'docker build -t ${IMAGE_NAME} .'
+                    sh script: 'docker build -t ${IMAGE_NAME} .', label: 'Build Docker Image'
                 }
             }
         }
@@ -32,7 +32,8 @@ pipeline {
             steps {
                 // Run tests (assuming you have a test script)
                 dir("${APP_DIR}") {
-                    sh 'npm test'
+                    sh script: 'npm install', label: 'Install Dependencies'
+                    sh script: 'npm test', label: 'Run Tests'
                 }
             }
         }
@@ -40,11 +41,11 @@ pipeline {
         stage('Deploy to Staging') {
             steps {
                 // Stop and remove any existing containers
-                sh 'docker stop $(docker ps -q --filter ancestor=${IMAGE_NAME}) || true'
-                sh 'docker rm $(docker ps -aq --filter ancestor=${IMAGE_NAME}) || true'
+                sh script: 'docker stop $(docker ps -q --filter ancestor=${IMAGE_NAME}) || true', label: 'Stop Containers'
+                sh script: 'docker rm $(docker ps -aq --filter ancestor=${IMAGE_NAME}) || true', label: 'Remove Containers'
 
                 // Run Docker container
-                sh 'docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}'
+                sh script: 'docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}', label: 'Run Docker Container'
             }
         }
 
