@@ -11,6 +11,17 @@ pipeline {
     }
 
     stages {
+        stage('Validate npm') {
+            steps {
+                script {
+                    // Check if npm is available
+                    sh 'which npm'
+                    // Print npm version
+                    sh 'npm --version'
+                }
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git url: "${env.GIT_REPO_URL}", branch: 'main'
