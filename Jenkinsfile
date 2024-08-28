@@ -7,7 +7,7 @@ pipeline {
         IMAGE_NAME = 'my-node-app'
         CONTAINER_PORT = '3000'
         HOST_PORT = '3000'
-        PATH = "/usr/local/bin:${env.PATH}"  // Ensure PATH includes the directory for Node.js and dependencies
+        PATH = "/Users/CHR/.nvm/versions/node/v22.5.1/bin:${env.PATH}"  // Include the directory for Node.js and npm
     }
 
     stages {
