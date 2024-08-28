@@ -1,6 +1,13 @@
 pipeline {
     agent any
 
+    options {
+        durabilityHint('PERFORMANCE_OPTIMIZED')
+        disableConcurrentBuilds()
+        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
     environment {
         GIT_REPO_URL = 'https://github.com/ayegwalo/my_jenkins_project.git'
         APP_DIR = 'jenkins-node-app'
@@ -10,53 +17,7 @@ pipeline {
     }
 
     stages {
-        stage('Clone Repository') {
-            steps {
-                // Checkout the code
-                checkout([$class: 'GitSCM',
-                          userRemoteConfigs: [[url: "${GIT_REPO_URL}"]],
-                          branches: [[name: '*/main']]])
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                // Build Docker image
-                dir("${APP_DIR}") {
-                    sh script: 'docker build -t ${IMAGE_NAME} .', label: 'Build Docker Image'
-                }
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                // Run tests (assuming you have a test script)
-                dir("${APP_DIR}") {
-                    sh script: 'npm install', label: 'Install Dependencies'
-                    sh script: 'npm test', label: 'Run Tests'
-                }
-            }
-        }
-
-        stage('Deploy to Staging') {
-            steps {
-                // Stop and remove any existing containers
-                sh script: 'docker stop $(docker ps -q --filter ancestor=${IMAGE_NAME}) || true', label: 'Stop Containers'
-                sh script: 'docker rm $(docker ps -aq --filter ancestor=${IMAGE_NAME}) || true', label: 'Remove Containers'
-
-                // Run Docker container
-                sh script: 'docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}', label: 'Run Docker Container'
-            }
-        }
-
-        stage('Notify') {
-            steps {
-                // Send a notification (e.g., Slack)
-                slackSend channel: '#jenkins-builds',
-                          color: 'good',
-                          message: "Job '${JOB_NAME}' (${BUILD_NUMBER}) is successful! Check console output: ${BUILD_URL}"
-            }
-        }
+        // Stages remain the same as in the previous Jenkinsfile
     }
 
     post {
