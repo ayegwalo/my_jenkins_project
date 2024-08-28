@@ -17,7 +17,49 @@ pipeline {
     }
 
     stages {
-        // Stages remain the same as in the previous Jenkinsfile
+        stage('Checkout') {
+            steps {
+                // Clone the repository
+                git url: "${env.GIT_REPO_URL}", branch: 'main'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir("${env.APP_DIR}") {
+                    // Install dependencies and build the application
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                dir("${env.APP_DIR}") {
+                    // Run tests
+                    sh 'npm test'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                script {
+                    // Build Docker image
+                    sh "docker build -t ${env.IMAGE_NAME} ."
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    // Deploy the Docker container
+                    sh "docker run -d -p ${env.HOST_PORT}:${env.CONTAINER_PORT} ${env.IMAGE_NAME}"
+                }
+            }
+        }
     }
 
     post {
