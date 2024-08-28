@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         GIT_REPO_URL = 'https://github.com/ayegwalo/my_jenkins_project.git'
-        APP_DIR = 'jenkins-node-app'
+        APP_DIR = '.' 
         IMAGE_NAME = 'my-node-app'
         CONTAINER_PORT = '3000'
         HOST_PORT = '3000'
