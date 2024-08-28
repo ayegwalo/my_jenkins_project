@@ -7,23 +7,13 @@ pipeline {
         IMAGE_NAME = 'my-node-app'
         CONTAINER_PORT = '3000'
         HOST_PORT = '3000'
+        PATH = "/usr/local/bin:${env.PATH}"  // Ensure PATH includes the directory for Node.js and dependencies
     }
 
     stages {
         stage('Checkout') {
             steps {
                 git url: "${env.GIT_REPO_URL}", branch: 'main'
-            }
-        }
-
-        stage('Setup') {
-            steps {
-                script {
-                    // Ensure dependencies are installed
-                    sh 'brew reinstall icu4c'
-                    sh 'brew link --force icu4c'
-                    sh 'brew reinstall node'
-                }
             }
         }
 
