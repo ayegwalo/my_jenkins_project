@@ -7,60 +7,69 @@ pipeline {
         IMAGE_NAME = 'my-node-app'
         CONTAINER_PORT = '3000'
         HOST_PORT = '3000'
-        PATH = "/usr/local/bin:${env.PATH}"  // Ensure PATH includes the directory for Node.js and dependencies
     }
 
     stages {
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                git url: "${env.GIT_REPO_URL}", branch: 'main'
+                // Checkout the code
+                checkout([$class: 'GitSCM',
+                          userRemoteConfigs: [[url: "${GIT_REPO_URL}"]],
+                          branches: [[name: '*/main']]])
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                dir("${env.APP_DIR}") {
-                    sh 'npm install'
-                    sh 'npm run build'
+                // Build Docker image
+                dir("${APP_DIR}") {
+                    sh script: 'docker build -t ${IMAGE_NAME} .', label: 'Build Docker Image'
                 }
             }
         }
 
-        stage('Test') {
+        stage('Run Tests') {
             steps {
-                dir("${env.APP_DIR}") {
-                    sh 'npm test'
+                // Run tests (assuming you have a test script)
+                dir("${APP_DIR}") {
+                    sh script: 'npm install', label: 'Install Dependencies'
+                    sh script: 'npm test', label: 'Run Tests'
                 }
             }
         }
 
-        stage('Docker Build') {
+        stage('Deploy to Staging') {
             steps {
-                script {
-                    // Check if Docker Buildx is available, and use it if installed
-                    sh 'docker buildx version || docker build -t ${env.IMAGE_NAME} .'
-                }
+                // Stop and remove any existing containers
+                sh script: 'docker stop $(docker ps -q --filter ancestor=${IMAGE_NAME}) || true', label: 'Stop Containers'
+                sh script: 'docker rm $(docker ps -aq --filter ancestor=${IMAGE_NAME}) || true', label: 'Remove Containers'
+
+                // Run Docker container
+                sh script: 'docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}', label: 'Run Docker Container'
             }
         }
 
-        stage('Deploy') {
+        stage('Notify') {
             steps {
-                script {
-                    // Deploy the Docker container
-                    sh "docker run -d -p ${env.HOST_PORT}:${env.CONTAINER_PORT} ${env.IMAGE_NAME}"
-                }
+                // Send a notification (e.g., Slack)
+                slackSend channel: '#jenkins-builds',
+                          color: 'good',
+                          message: "Job '${JOB_NAME}' (${BUILD_NUMBER}) is successful! Check console output: ${BUILD_URL}"
             }
         }
     }
 
     post {
         always {
+            // Clean up workspace
             cleanWs()
         }
         success {
+            // Additional actions on success
             echo 'Pipeline succeeded!'
         }
         failure {
+            // Additional actions on failure
             echo 'Pipeline failed!'
             slackSend channel: '#jenkins-builds',
                       color: 'danger',
