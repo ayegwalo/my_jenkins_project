@@ -44,7 +44,7 @@ const requestHandler = (request, response) => {
 
   // Set the content type to HTML
   response.setHeader('Content-Type', 'text/html');
-  // Send the HTML content
+  // Sending the HTML content
   response.end(htmlContent);
 };
 
