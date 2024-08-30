@@ -8,8 +8,6 @@
     "build": "echo 'No build step required for this application.'",
     "test": "echo 'No test script specified.'"
   },
-  "dependencies": {
-    "http": "0.0.1-security" 
-  },
+  "dependencies": {},
   "devDependencies": {}
 }

@@ -23,7 +23,13 @@ pipeline {
             steps {
                 // Build Docker image
                 dir("${APP_DIR}") {
-                    sh script: 'docker build -t ${IMAGE_NAME} .', label: 'Build Docker Image'
+                    script {
+                        try {
+                            sh(script: 'docker build -t ${IMAGE_NAME} .', label: 'Build Docker Image')
+                        } catch (Exception e) {
+                            error("Failed to build Docker image: ${e.message}")
+                        }
+                    }
                 }
             }
         }
@@ -32,29 +38,43 @@ pipeline {
             steps {
                 // Run tests (assuming you have a test script)
                 dir("${APP_DIR}") {
-                    sh script: 'npm install', label: 'Install Dependencies'
-                    sh script: 'npm test', label: 'Run Tests'
+                    script {
+                        try {
+                            sh(script: 'npm install', label: 'Install Dependencies')
+                            sh(script: 'npm test', label: 'Run Tests')
+                        } catch (Exception e) {
+                            error("Failed to run tests: ${e.message}")
+                        }
+                    }
                 }
             }
         }
 
         stage('Deploy to Staging') {
             steps {
-                // Stop and remove any existing containers
-                sh script: 'docker stop $(docker ps -q --filter ancestor=${IMAGE_NAME}) || true', label: 'Stop Containers'
-                sh script: 'docker rm $(docker ps -aq --filter ancestor=${IMAGE_NAME}) || true', label: 'Remove Containers'
+                script {
+                    try {
+                        // Stop and remove any existing containers
+                        sh(script: 'docker stop $(docker ps -q --filter ancestor=${IMAGE_NAME}) || true', label: 'Stop Containers')
+                        sh(script: 'docker rm $(docker ps -aq --filter ancestor=${IMAGE_NAME}) || true', label: 'Remove Containers')
 
-                // Run Docker container
-                sh script: 'docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}', label: 'Run Docker Container'
+                        // Run Docker container
+                        sh(script: 'docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}', label: 'Run Docker Container')
+                    } catch (Exception e) {
+                        error("Failed to deploy Docker container: ${e.message}")
+                    }
+                }
             }
         }
 
         stage('Notify') {
             steps {
                 // Send a notification (e.g., Slack)
-                slackSend channel: '#jenkins-builds',
-                          color: 'good',
-                          message: "Job '${JOB_NAME}' (${BUILD_NUMBER}) is successful! Check console output: ${BUILD_URL}"
+                script {
+                    slackSend channel: '#jenkins-builds',
+                              color: 'good',
+                              message: "Job '${JOB_NAME}' (${BUILD_NUMBER}) is successful! Check console output: ${BUILD_URL}"
+                }
             }
         }
     }
