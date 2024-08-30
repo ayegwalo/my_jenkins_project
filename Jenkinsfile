@@ -12,16 +12,26 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                // Checkout the code
                 checkout([$class: 'GitSCM',
                           userRemoteConfigs: [[url: "${GIT_REPO_URL}"]],
                           branches: [[name: '*/main']]])
             }
         }
 
+        stage('Check Shell Availability') {
+            steps {
+                script {
+                    try {
+                        sh(script: 'echo "Shell is available"', label: 'Check Shell Availability')
+                    } catch (Exception e) {
+                        error("Shell command failed: ${e.message}")
+                    }
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                // Build Docker image
                 dir("${APP_DIR}") {
                     script {
                         try {
@@ -36,7 +46,6 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                // Run tests (assuming you have a test script)
                 dir("${APP_DIR}") {
                     script {
                         try {
@@ -54,11 +63,8 @@ pipeline {
             steps {
                 script {
                     try {
-                        // Stop and remove any existing containers
                         sh(script: 'docker stop $(docker ps -q --filter ancestor=${IMAGE_NAME}) || true', label: 'Stop Containers')
                         sh(script: 'docker rm $(docker ps -aq --filter ancestor=${IMAGE_NAME}) || true', label: 'Remove Containers')
-
-                        // Run Docker container
                         sh(script: 'docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}', label: 'Run Docker Container')
                     } catch (Exception e) {
                         error("Failed to deploy Docker container: ${e.message}")
@@ -69,7 +75,6 @@ pipeline {
 
         stage('Notify') {
             steps {
-                // Send a notification (e.g., Slack)
                 script {
                     slackSend channel: '#jenkins-builds',
                               color: 'good',
@@ -81,15 +86,12 @@ pipeline {
 
     post {
         always {
-            // Clean up workspace
             cleanWs()
         }
         success {
-            // Additional actions on success
             echo 'Pipeline succeeded!'
         }
         failure {
-            // Additional actions on failure
             echo 'Pipeline failed!'
             slackSend channel: '#jenkins-builds',
                       color: 'danger',
